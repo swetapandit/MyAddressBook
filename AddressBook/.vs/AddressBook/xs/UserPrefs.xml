@@ -1,62 +1,38 @@
 ﻿<Properties StartupConfiguration="{C43CF1B8-E6C1-40D7-A582-F73809D15B50}|Default">
-  <MonoDevelop.Ide.DebuggingService.Breakpoints>
-    <BreakpointStore>
-      <Breakpoint file="/Users/swetapandit/Desktop/MyAddressBook/BusinessLayer/Service/ContactBL.cs" line="28" column="1" />
-      <Breakpoint file="/Users/swetapandit/Desktop/MyAddressBook/BusinessLayer/Interface/IUserBL.cs" line="11" column="1" />
-      <Breakpoint file="/Users/swetapandit/Desktop/MyAddressBook/RepositoryLayer/Service/UserRL.cs" line="68" column="1" />
-      <Breakpoint file="/Users/swetapandit/Desktop/MyAddressBook/RepositoryLayer/Service/UserRL.cs" line="72" column="1" />
-      <Breakpoint file="/Users/swetapandit/Desktop/MyAddressBook/AddressBook/Controllers/AuthController.cs" relfile="Controllers/AuthController.cs" line="47" column="1" />
-      <Breakpoint file="/Users/swetapandit/Desktop/MyAddressBook/AddressBook/Controllers/AuthController.cs" relfile="Controllers/AuthController.cs" line="49" column="1" />
-      <Breakpoint file="/Users/swetapandit/Desktop/MyAddressBook/AddressBook/Controllers/AuthController.cs" relfile="Controllers/AuthController.cs" line="47" column="1" />
-      <Breakpoint file="/Users/swetapandit/Desktop/MyAddressBook/AddressBook/Controllers/AuthController.cs" relfile="Controllers/AuthController.cs" line="52" column="1" />
-    </BreakpointStore>
-  </MonoDevelop.Ide.DebuggingService.Breakpoints>
-  <MonoDevelop.Ide.Workbench ActiveDocument="../ModelLayer/Model/AsyncResponseModel.cs">
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
+  <MonoDevelop.Ide.DebuggingService.PinnedWatches />
+  <MonoDevelop.Ide.Workbench ActiveDocument="../BusinessLayer/Service/ContactBL.cs">
     <Files>
-      <File FileName="Program.cs" Line="16" Column="2" IsPinned="True" />
-      <File FileName="Controllers/ContactController.cs" Line="46" Column="45" />
-      <File FileName="../BusinessLayer/Interface/IContactBL.cs" Line="11" Column="45" />
-      <File FileName="../BusinessLayer/Interface/IUserBL.cs" Line="11" Column="9" />
-      <File FileName="../BusinessLayer/Service/ContactBL.cs" Line="43" Column="13" />
-      <File FileName="../RepositoryLayer/Interface/IContactRL.cs" Line="11" Column="61" />
-      <File FileName="../RepositoryLayer/Service/ContactRL.cs" Line="26" Column="36" />
-      <File FileName="../RepositoryLayer/Entity/ContactEntity.cs" Line="29" Column="2" />
-      <File FileName="Controllers/AuthController.cs" Line="56" Column="2" />
-      <File FileName="../BusinessLayer/Service/UserBL.cs" Line="108" Column="2" />
-      <File FileName="appsettings.json" Line="1" Column="1" />
-      <File FileName="../RepositoryLayer/Service/UserRL.cs" Line="68" Column="50" />
-      <File FileName="../RepositoryLayer/Entity/UserEntity.cs" Line="22" Column="41" />
-      <File FileName="../BusinessLayer/Service/EmailSender.cs" Line="31" Column="19" />
-      <File FileName="../ModelLayer/Model/ForgotPasswordRequestModel.cs" Line="10" Column="1" />
-      <File FileName="../ModelLayer/Model/ResponseModel.cs" Line="12" Column="2" />
-      <File FileName="../RepositoryLayer/Interface/IUserRL.cs" Line="11" Column="44" />
-      <File FileName="../ModelLayer/Model/AsyncResponseModel.cs" Line="12" Column="1" />
+      <File FileName="Program.cs" Line="20" Column="14" />
+      <File FileName="Controllers/AuthController.cs" Line="19" Column="1" />
+      <File FileName="Controllers/ContactController.cs" Line="20" Column="28" />
+      <File FileName="../BusinessLayer/Interface/IContactBL.cs" Line="7" Column="22" />
+      <File FileName="../BusinessLayer/Service/ContactBL.cs" Line="28" Column="10" />
     </Files>
     <Pads>
       <Pad Id="ProjectPad">
         <State name="__root__">
-          <Node name="AddressBook" expanded="True">
-            <Node name="AddressBook">
+          <Node name="AddressBook">
+            <Node name="AddressBook" expanded="True">
               <Node name="Controllers" expanded="True" />
             </Node>
-            <Node name="ModelLayer">
-              <Node name="Model">
-                <Node name="AsyncResponseModel.cs" selected="True" />
-              </Node>
-            </Node>
-            <Node name="RepositoryLayer">
-              <Node name="Context" expanded="True" />
-              <Node name="Entity" expanded="True" />
+            <Node name="BusinessLayer" expanded="True">
               <Node name="Interface" expanded="True" />
-              <Node name="Service" expanded="True" />
+              <Node name="Service" expanded="True">
+                <Node name="ContactBL.cs" selected="True" />
+              </Node>
             </Node>
           </Node>
         </State>
       </Pad>
     </Pads>
   </MonoDevelop.Ide.Workbench>
-  <MonoDevelop.Ide.ItemProperties.AddressBook PreferredExecutionTarget="/Applications/Brave Browser.app" />
-  <MonoDevelop.Ide.DebuggingService.PinnedWatches />
+  <MonoDevelop.Ide.DebuggingService.Breakpoints>
+    <BreakpointStore>
+      <Breakpoint file="/Users/swetapandit/Desktop/MyAddressBook/RepositoryLayer/Service/ContactRL.cs" line="57" column="1" />
+      <Breakpoint file="/Users/swetapandit/Desktop/MyAddressBook/RepositoryLayer/Service/ContactRL.cs" line="55" column="1" />
+    </BreakpointStore>
+  </MonoDevelop.Ide.DebuggingService.Breakpoints>
   <MultiItemStartupConfigurations />
-  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
+  <MonoDevelop.Ide.ItemProperties.AddressBook PreferredExecutionTarget="/Applications/Brave Browser.app" />
 </Properties>
