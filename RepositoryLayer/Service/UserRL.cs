@@ -9,13 +9,25 @@ namespace RepositoryLayer.Service
     public class UserRL : IUserRL
     {
         private readonly AddressBookContext addressBookContext;
-        public UserRL(AddressBookContext _addressBookContext)
+        private readonly EmailValidator emailValidator;
+        public UserRL(AddressBookContext _addressBookContext,EmailValidator _emailValidator)
         {
             addressBookContext = _addressBookContext;
+            emailValidator = _emailValidator;
         }
 
         public ResponseModel<UserEntity> Register(UserRegisterRequestModel user)
         {
+            if (!emailValidator.IsValidEmail(user.Email))
+            {
+                return new ResponseModel<UserEntity>
+                {
+                    Data = null,
+                    Success = false,
+                    Message = "Invalid email format.",
+                    StatusCode = 400 // Bad Request
+                };
+            }
             var existingUser = addressBookContext.Users.FirstOrDefault(g => g.Email == user.Email);
 
             if (existingUser != null) return null;
@@ -42,6 +54,17 @@ namespace RepositoryLayer.Service
 
         public ResponseModel<UserEntity> Login(UserLoginRequestModel user)
         {
+            if (!emailValidator.IsValidEmail(user.Email))
+            {
+                return new ResponseModel<UserEntity>
+                {
+                    Data = null,
+                    Success = false,
+                    Message = "Invalid email format.",
+                    StatusCode = 400 // Bad Request
+                };
+            }
+
             var existingUser = addressBookContext.Users.FirstOrDefault(g => g.Email == user.Email);
 
             if (existingUser == null || !BCrypt.Net.BCrypt.Verify(user.Password, existingUser.Password))
