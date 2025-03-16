@@ -31,6 +31,8 @@ builder.Services.AddScoped<IUserBL, UserBL>();
 builder.Services.AddScoped<IEmailSender, EmailSender>();
 builder.Services.AddControllersWithViews();
 
+builder.Services.AddSingleton<EmailValidator>();
+
 builder.Services.AddEndpointsApiExplorer();
 
 // Swagger Configuration with JWT Authentication

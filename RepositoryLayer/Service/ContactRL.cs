@@ -9,17 +9,28 @@ namespace RepositoryLayer.Service
     public class ContactRL : IContactRL
     {
         private readonly AddressBookContext addressBookContext;
+        private readonly EmailValidator emailValidator;
 
-        public ContactRL(AddressBookContext _addressBookContext)
+        public ContactRL(AddressBookContext _addressBookContext, EmailValidator _emailValidator)
         {
             addressBookContext = _addressBookContext;
+            emailValidator = _emailValidator;
         }
 
 
         // Add a new Contact
         public ResponseModel<ContactEntity> AddContact(CreateContactRequestModel contact, int userId)
         {
-
+            if (!emailValidator.IsValidEmail(contact.Email))
+            {
+                return new ResponseModel<ContactEntity>
+                {
+                    Data = null,
+                    Success = false,
+                    Message = "Invalid email format.",
+                    StatusCode = 400 // Bad Request
+                };
+            }
             var existingContact = addressBookContext.Contacts.FirstOrDefault(g => g.PhoneNumber == contact.PhoneNumber && g.OwnerId == userId);
             if (existingContact != null) return null;
             var owner = addressBookContext.Users.FirstOrDefault(g => g.Id == userId);
@@ -101,6 +112,17 @@ namespace RepositoryLayer.Service
 
         public ResponseModel<ContactEntity> UpdateContactById(int id, UpdateContactRequestModel contact,int userId)
         {
+            if (contact.Email != null && !emailValidator.IsValidEmail(contact.Email))
+            {
+                return new ResponseModel<ContactEntity>
+                {
+                    Data = null,
+                    Success = false,
+                    Message = "Invalid email format.",
+                    StatusCode = 400 // Bad Request
+                };
+            }
+
             var updatedContact = addressBookContext.Contacts.FirstOrDefault(c => c.Id == id && c.OwnerId == userId);
             if (updatedContact == null)
             {
