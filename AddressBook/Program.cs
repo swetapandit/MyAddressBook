@@ -1,5 +1,4 @@
-﻿
-using System.Text;
+﻿using System.Text;
 using BusinessLayer.Interface;
 using BusinessLayer.Service;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -9,6 +8,7 @@ using Microsoft.OpenApi.Models;
 using RepositoryLayer.Context;
 using RepositoryLayer.Interface;
 using RepositoryLayer.Service;
+using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,7 +18,6 @@ builder.Services.AddCors(p => p.AddPolicy("corspolicy", build =>
 }));
 
 // Add services to the container.
-
 builder.Services.AddControllers();
 builder.Services.AddHttpContextAccessor();
 
@@ -88,6 +87,14 @@ builder.Services.AddAuthentication(options =>
 // DB Context
 builder.Services.AddDbContext<AddressBookContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("AddressBookContext")));
+
+// Configure Redis
+builder.Services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(builder.Configuration.GetValue<string>("Redis:ConnectionString")));
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = builder.Configuration.GetValue<string>("Redis:ConnectionString");
+    options.InstanceName = "AddressBookApp:";
+});
 
 var app = builder.Build();
 

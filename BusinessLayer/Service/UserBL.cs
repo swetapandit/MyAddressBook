@@ -9,6 +9,8 @@ using Microsoft.IdentityModel.Tokens;
 using ModelLayer.Model;
 using RepositoryLayer.Entity;
 using RepositoryLayer.Interface;
+using StackExchange.Redis;
+using System.Threading.Tasks;
 
 namespace BusinessLayer.Service
 {
@@ -18,13 +20,17 @@ namespace BusinessLayer.Service
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IConfiguration _configuration;
         private readonly IEmailSender _emailSender;
+        private readonly IConnectionMultiplexer _redisConnection;
+        private readonly IDatabase _redisDatabase;
 
-        public UserBL(IUserRL userRL, IConfiguration configuration, IEmailSender emailSender, IHttpContextAccessor httpContextAccessor)
+        public UserBL(IUserRL userRL, IConfiguration configuration, IEmailSender emailSender, IHttpContextAccessor httpContextAccessor, IConnectionMultiplexer redisConnection)
         {
             _userRL = userRL;
             _configuration = configuration;
             _emailSender = emailSender;
             _httpContextAccessor = httpContextAccessor;
+            _redisConnection = redisConnection;
+            _redisDatabase = redisConnection.GetDatabase(); // Getting Redis database instance
         }
 
         public ResponseModel<UserEntity> Register(UserRegisterRequestModel user)
@@ -42,6 +48,9 @@ namespace BusinessLayer.Service
             }
 
             string token = GenerateToken(result.Data);
+
+            // Store the JWT token in Redis (using the UserId as the key)
+            _redisDatabase.StringSet($"session:{result.Data.Id}", token, TimeSpan.FromMinutes(60)); // Setting expiration to 60 minutes
 
             return new ResponseModel<UserEntity>
             {
@@ -94,18 +103,42 @@ namespace BusinessLayer.Service
             // Send email without including Action in response
             await _emailSender.SendEmailAsync(request.Email, subject, message);
 
-            _userRL.StoreOTP(otp,request.Email);
+            // Store OTP in Redis temporarily (valid for 10 minutes)
+            _redisDatabase.StringSet($"otp:{request.Email}", otp.ToString(), TimeSpan.FromMinutes(10)); // Setting OTP expiration
+
             return new AsyncResponseModel<string>(
-            "Your OTP is the token",
-            "Email sent successfully",
-            200,
-            true,
-            "Check your email"
+                "Your OTP is the token",
+                "Email sent successfully",
+                200,
+                true,
+                "Check your email"
             );
         }
 
         public ResponseModel<string> ResetPassword(ResetPasswordRequestModel request)
         {
+            var storedOtp = _redisDatabase.StringGet($"otp:{request.Email}"); // Get OTP from Redis
+
+            if (storedOtp.IsNullOrEmpty)
+            {
+                return new ResponseModel<string>
+                {
+                    Success = false,
+                    Message = "OTP expired or not found.",
+                    StatusCode = 400
+                };
+            }
+
+            if (storedOtp != request.Otp.ToString())
+            {
+                return new ResponseModel<string>
+                {
+                    Success = false,
+                    Message = "Invalid OTP.",
+                    StatusCode = 400
+                };
+            }
+
             return _userRL.ResetPassword(request);
         }
     }
