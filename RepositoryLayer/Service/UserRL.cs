@@ -1,5 +1,9 @@
 ﻿using System;
+using System.Linq;
+using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Logging;
 using ModelLayer.Model;
+using Newtonsoft.Json;
 using RepositoryLayer.Context;
 using RepositoryLayer.Entity;
 using RepositoryLayer.Interface;
@@ -10,16 +14,23 @@ namespace RepositoryLayer.Service
     {
         private readonly AddressBookContext addressBookContext;
         private readonly EmailValidator emailValidator;
-        public UserRL(AddressBookContext _addressBookContext,EmailValidator _emailValidator)
+        private readonly IDistributedCache redisCache;
+        private readonly ILogger<UserRL> logger;  // Inject logging
+
+        public UserRL(AddressBookContext _addressBookContext, EmailValidator _emailValidator,
+                      IDistributedCache _redisCache, ILogger<UserRL> _logger)
         {
             addressBookContext = _addressBookContext;
             emailValidator = _emailValidator;
+            redisCache = _redisCache;
+            logger = _logger;  // Assign logger
         }
 
         public ResponseModel<UserEntity> Register(UserRegisterRequestModel user)
         {
             if (!emailValidator.IsValidEmail(user.Email))
             {
+                logger.LogWarning("Invalid email format for registration: {Email}", user.Email);
                 return new ResponseModel<UserEntity>
                 {
                     Data = null,
@@ -28,9 +39,19 @@ namespace RepositoryLayer.Service
                     StatusCode = 400 // Bad Request
                 };
             }
-            var existingUser = addressBookContext.Users.FirstOrDefault(g => g.Email == user.Email);
 
-            if (existingUser != null) return null;
+            var existingUser = addressBookContext.Users.FirstOrDefault(g => g.Email == user.Email);
+            if (existingUser != null)
+            {
+                logger.LogWarning("User already exists with email: {Email}", user.Email);
+                return new ResponseModel<UserEntity>
+                {
+                    Data = null,
+                    Success = false,
+                    Message = "User already exists.",
+                    StatusCode = 409 // Conflict
+                };
+            }
 
             var hashedPassword = BCrypt.Net.BCrypt.HashPassword(user.Password);
             var newUser = new UserEntity
@@ -42,6 +63,11 @@ namespace RepositoryLayer.Service
             };
             addressBookContext.Users.Add(newUser);
             addressBookContext.SaveChanges();
+
+            // Cache user data in Redis
+            redisCache.SetString($"user:{newUser.Email}", JsonConvert.SerializeObject(newUser));
+            logger.LogInformation("User registered successfully: {Email}", newUser.Email);
+
             return new ResponseModel<UserEntity>
             {
                 Data = newUser,
@@ -49,13 +75,13 @@ namespace RepositoryLayer.Service
                 Message = "User Registered Successfully.",
                 StatusCode = 200 // OK
             };
-
         }
 
         public ResponseModel<UserEntity> Login(UserLoginRequestModel user)
         {
             if (!emailValidator.IsValidEmail(user.Email))
             {
+                logger.LogWarning("Invalid email format for login: {Email}", user.Email);
                 return new ResponseModel<UserEntity>
                 {
                     Data = null,
@@ -65,16 +91,38 @@ namespace RepositoryLayer.Service
                 };
             }
 
-            var existingUser = addressBookContext.Users.FirstOrDefault(g => g.Email == user.Email);
+            // Check Redis cache first
+            var cachedUser = redisCache.GetString($"user:{user.Email}");
+            UserEntity existingUser = null;
+            if (cachedUser != null)
+            {
+                existingUser = JsonConvert.DeserializeObject<UserEntity>(cachedUser);
+            }
+            else
+            {
+                existingUser = addressBookContext.Users.FirstOrDefault(g => g.Email == user.Email);
+                if (existingUser != null)
+                {
+                    // Cache the user data for next use
+                    redisCache.SetString($"user:{user.Email}", JsonConvert.SerializeObject(existingUser));
+                }
+            }
 
             if (existingUser == null || !BCrypt.Net.BCrypt.Verify(user.Password, existingUser.Password))
             {
-                return null; // Invalid credentials
+                logger.LogWarning("Invalid login attempt for email: {Email}", user.Email);
+                return new ResponseModel<UserEntity>
+                {
+                    Data = null,
+                    Success = false,
+                    Message = "Invalid credentials.",
+                    StatusCode = 401 // Unauthorized
+                };
             }
 
-            var existingUser1 = new UserEntity
+            var userInfo = new UserEntity
             {
-                Id = existingUser.Id,   // ID ko include karo
+                Id = existingUser.Id,
                 Name = existingUser.Name,
                 Email = existingUser.Email,
                 IsAdmin = existingUser.IsAdmin
@@ -82,37 +130,62 @@ namespace RepositoryLayer.Service
 
             return new ResponseModel<UserEntity>
             {
-                Data = existingUser1,
+                Data = userInfo,
                 Success = true,
                 Message = "User Logged in Successfully.",
                 StatusCode = 200 // OK
             };
         }
-        public void StoreOTP(int otp,string email)
+
+        public void StoreOTP(int otp, string email)
         {
-            var user = addressBookContext.Users.FirstOrDefault(c => c.Email == email);
-            user.Otp = otp;
-            addressBookContext.SaveChanges();
+            // Check if OTP exists and reset expiration time
+            var cachedOtp = redisCache.GetString($"otp:{email}");
+            if (cachedOtp != null)
+            {
+                redisCache.Remove($"otp:{email}");
+            }
+
+            // Store OTP in Redis with an expiration time (e.g., 15 minutes)
+            redisCache.SetString($"otp:{email}", otp.ToString(), new DistributedCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(15)
+            });
+
+            logger.LogInformation("OTP stored for email: {Email}", email);
         }
 
         public ResponseModel<string> ResetPassword(ResetPasswordRequestModel request)
         {
-            var user = addressBookContext.Users.FirstOrDefault(g => g.Email == request.Email);
-            if(user.Otp != request.Otp)
+            // Check OTP from Redis first
+            var cachedOtp = redisCache.GetString($"otp:{request.Email}");
+
+            if (cachedOtp == null || cachedOtp != request.Otp.ToString())
             {
+                logger.LogWarning("Invalid or expired OTP for email: {Email}", request.Email);
                 return new ResponseModel<string>
                 {
                     Data = "Please try again",
-                    Success = true,
-                    Message = "Wrong or expired otp",
-                    StatusCode = 400 // OK
+                    Success = false,
+                    Message = "Wrong or expired OTP",
+                    StatusCode = 400 // Bad Request
                 };
             }
-            //it means otp is matched
-            var hashedPassword = BCrypt.Net.BCrypt.HashPassword(request.Password);
-            user.Password = hashedPassword;
-            user.Otp = 0;
-            addressBookContext.SaveChanges();
+
+            // Proceed with password reset
+            var user = addressBookContext.Users.FirstOrDefault(g => g.Email == request.Email);
+            if (user != null)
+            {
+                var hashedPassword = BCrypt.Net.BCrypt.HashPassword(request.Password);
+                user.Password = hashedPassword;
+                user.Otp = 0;
+                addressBookContext.SaveChanges();
+
+                // Remove OTP from Redis after reset
+                redisCache.Remove($"otp:{request.Email}");
+
+                logger.LogInformation("Password reset successfully for email: {Email}", request.Email);
+            }
 
             return new ResponseModel<string>
             {

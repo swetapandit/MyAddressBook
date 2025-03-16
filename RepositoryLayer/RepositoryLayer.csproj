@@ -31,6 +31,8 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
+    <PackageReference Include="StackExchange.Redis" Version="2.8.31" />
+    <PackageReference Include="Newtonsoft.Json" Version="6.0.8" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ModelLayer\ModelLayer.csproj" />
