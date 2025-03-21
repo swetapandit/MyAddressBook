@@ -7,8 +7,8 @@ namespace BusinessLayer.Service
 {
 	public class EmailSender : IEmailSender
     {
-        private readonly string _email = "swetap.pndt@gmail.com"; 
-        private readonly string _password = "unht iilf oiqv lumv";
+        private readonly string _email = ""; 
+        private readonly string _password = "";
         public EmailSender()
 		{
 		}
